@@ -1,0 +1,37 @@
+LOGOTIPOS DE LAS ASEGURADORAS
+=============================
+
+Los seis archivos PNG de esta carpeta son los logotipos que ya usa el
+comparador, recortados y con el fondo blanco convertido en transparencia:
+
+  adeslas.png   asisa.png   mapfre.png
+  caser.png     allianz.png liberty.png
+
+Se ven en la tira de compañías de la portada, en las tarjetas de cada
+póliza y en la cabecera de la tabla comparativa.
+
+PARA SUSTITUIR UNO
+------------------
+Deja el archivo nuevo con el mismo nombre. Si tienes el SVG del manual de
+marca, mejor: se ve nítido en cualquier pantalla. En ese caso guárdalo
+como <slug>.svg y cambia la extensión en el campo `logo:` de
+src/data/companias.ts.
+
+SI ALGUNO DESENTONA DE TAMAÑO
+-----------------------------
+Cada compañía tiene en src/data/companias.ts un campo `alto` con su altura
+en píxeles. Los logotipos de dos líneas (Adeslas, Caser, Liberty, Mapfre)
+necesitan más altura que los de una sola (Allianz, Asisa) para pesar lo
+mismo en la fila. Ajústalo hasta que la tira quede equilibrada.
+
+EN TEMA OSCURO
+--------------
+Los logotipos son tinta oscura sobre transparencia, así que en modo oscuro
+se apoyan automáticamente en una pastilla blanca (clase .logo-marca en
+globals.css). No hace falta una versión en negativo.
+
+USO DE MARCA
+------------
+Usa siempre los archivos del manual de marca que te facilite cada
+aseguradora: son ellas quienes autorizan el uso y quienes fijan la versión,
+el área de respeto y el tamaño mínimo.
