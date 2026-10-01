@@ -15,11 +15,24 @@
  * preview apuntarían al dominio definitivo, que todavía no existe.
  *
  *   NEXT_PUBLIC_SITE_URL   la manda; ponla cuando tengas el dominio final
- *   NEXT_PUBLIC_VERCEL_URL la inyecta Vercel sola en cada despliegue
+ *   ..._PRODUCTION_URL     el alias estable del proyecto en Vercel
+ *   NEXT_PUBLIC_VERCEL_URL la del despliegue concreto, distinta cada vez
  *   y si no hay ninguna, el dominio previsto
+ *
+ * El orden importa. VERCEL_URL apunta al despliegue concreto
+ * (comparador-seguros-5z7a1uhj0-….vercel.app), que cambia en cada push: si
+ * manda ella, cada canonical señala a una dirección que ya nadie visita. El
+ * alias de producción (comparador-seguros-black.vercel.app) sí es estable, así
+ * que va antes.
  */
 const urlBase =
   process.env.NEXT_PUBLIC_SITE_URL ||
+  (process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL}`
+    : "") ||
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : "") ||
   (process.env.NEXT_PUBLIC_VERCEL_URL
     ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
     : "") ||

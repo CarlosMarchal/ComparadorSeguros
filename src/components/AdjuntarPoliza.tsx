@@ -50,6 +50,26 @@ export function AdjuntarPoliza({
   const [poliza, setPoliza] = useState<Poliza | null>(null);
   const [enviando, setEnviando] = useState(false);
 
+  /**
+   * Si el lector de pólizas está configurado en el servidor.
+   *
+   * `null` mientras se comprueba. Sin esto, alguien podía arrastrar su póliza,
+   * esperar, y recibir un error — el peor momento para enterarse de que el
+   * servicio no está disponible. Se pregunta al abrir el diálogo, no al cargar
+   * la página, para no hacer una petición que casi nadie va a necesitar.
+   */
+  const [lector, setLector] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!abierto || lector !== null) return;
+    let vivo = true;
+    fetch("/api/analizar-poliza")
+      .then((r) => r.json())
+      .then((j) => vivo && setLector(Boolean(j.disponible)))
+      .catch(() => vivo && setLector(false));
+    return () => { vivo = false; };
+  }, [abierto, lector]);
+
   useEffect(() => {
     const d = ref.current;
     if (!d) return;
@@ -142,6 +162,46 @@ export function AdjuntarPoliza({
     "surface w-full rounded-[var(--radius-control)] border border-hair px-3.5 py-2.5 text-[0.95rem] text-fg outline-none transition-colors focus:border-[var(--accent)]";
   const etiqueta = "mb-1.5 block text-xs font-semibold text-fg";
 
+  /**
+   * El formulario de llamada, idéntico se llegue a él tras leer la póliza o
+   * porque el lector no esté disponible. Es el mismo trámite para el usuario,
+   * así que conviene que sea literalmente el mismo formulario.
+   */
+  const formularioLlamada = (titulo: string) => (
+    <form onSubmit={pedirLlamada} className="mt-6 grid gap-4 border-t border-hair pt-6">
+      <p className="t-titular text-fg">{titulo}</p>
+      <div>
+        <label htmlFor="adj-nombre" className={etiqueta}>Nombre</label>
+        <input id="adj-nombre" name="nombre" required autoComplete="name" className={campo} placeholder="Tu nombre" />
+      </div>
+      <div>
+        <label htmlFor="adj-telefono" className={etiqueta}>Teléfono</label>
+        <input id="adj-telefono" name="telefono" type="tel" required autoComplete="tel" inputMode="tel" className={campo} placeholder="600 000 000" />
+      </div>
+      <div>
+        <label htmlFor="adj-email" className={etiqueta}>Correo electrónico</label>
+        <input id="adj-email" name="email" type="email" required autoComplete="email" className={campo} placeholder="tu@email.com" />
+      </div>
+
+      <label className="flex items-start gap-2.5 text-xs leading-relaxed text-dim">
+        <input type="checkbox" required className="mt-0.5 h-4 w-4 shrink-0 border-hair" style={{ accentColor: "var(--accent)" }} />
+        <span>
+          Acepto la política de privacidad y que se traten mis datos para
+          informarme sobre el seguro solicitado.
+        </span>
+      </label>
+
+      <button
+        type="submit"
+        disabled={enviando}
+        className="pulsable w-full rounded-full px-5 py-3 text-[0.95rem] font-semibold disabled:opacity-60"
+        style={{ background: "var(--accent)", color: "var(--accent-fg)" }}
+      >
+        {enviando ? "Enviando…" : "Que me llamen"}
+      </button>
+    </form>
+  );
+
   return (
     <dialog
       ref={ref}
@@ -161,7 +221,21 @@ export function AdjuntarPoliza({
         </button>
 
         {/* ------------------------------------------------------------ Subir */}
-        {fase === "subir" && (
+        {fase === "subir" && lector === false && (
+          <div className="materializa">
+            <h2 id="adj-titulo" className="t-seccion pr-10 text-fg">
+              Ahora mismo no podemos leer tu póliza
+            </h2>
+            <p className="t-cuerpo mt-3 text-dim">
+              La lectura automática de documentos está en mantenimiento. No
+              subas nada todavía: déjanos tu teléfono y un asesor la repasa
+              contigo, que para esto no hace falta esperar.
+            </p>
+            {formularioLlamada("Déjanos un teléfono y lo vemos contigo")}
+          </div>
+        )}
+
+        {fase === "subir" && lector !== false && (
           <>
             <h2 id="adj-titulo" className="t-seccion pr-10 text-fg">
               Adjunta tu seguro y compara
@@ -294,40 +368,7 @@ export function AdjuntarPoliza({
               </p>
             )}
 
-            <form onSubmit={pedirLlamada} className="mt-6 grid gap-4 border-t border-hair pt-6">
-              <p className="t-titular text-fg">
-                Déjanos un teléfono y te decimos si te conviene cambiar
-              </p>
-              <div>
-                <label htmlFor="adj-nombre" className={etiqueta}>Nombre</label>
-                <input id="adj-nombre" name="nombre" required autoComplete="name" className={campo} placeholder="Tu nombre" />
-              </div>
-              <div>
-                <label htmlFor="adj-telefono" className={etiqueta}>Teléfono</label>
-                <input id="adj-telefono" name="telefono" type="tel" required autoComplete="tel" inputMode="tel" className={campo} placeholder="600 000 000" />
-              </div>
-              <div>
-                <label htmlFor="adj-email" className={etiqueta}>Correo electrónico</label>
-                <input id="adj-email" name="email" type="email" required autoComplete="email" className={campo} placeholder="tu@email.com" />
-              </div>
-
-              <label className="flex items-start gap-2.5 text-xs leading-relaxed text-dim">
-                <input type="checkbox" required className="mt-0.5 h-4 w-4 shrink-0 border-hair" style={{ accentColor: "var(--accent)" }} />
-                <span>
-                  Acepto la política de privacidad y que se traten mis datos para
-                  informarme sobre el seguro solicitado.
-                </span>
-              </label>
-
-              <button
-                type="submit"
-                disabled={enviando}
-                className="pulsable w-full rounded-full px-5 py-3 text-[0.95rem] font-semibold disabled:opacity-60"
-                style={{ background: "var(--accent)", color: "var(--accent-fg)" }}
-              >
-                {enviando ? "Enviando…" : "Que me llamen"}
-              </button>
-            </form>
+            {formularioLlamada("Déjanos un teléfono y te decimos si te conviene cambiar")}
           </div>
         )}
 
