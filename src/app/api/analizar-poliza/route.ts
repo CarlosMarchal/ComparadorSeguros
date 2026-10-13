@@ -97,7 +97,9 @@ REGLA INNEGOCIABLE DE PRIVACIDAD. No extraigas, no copies y no menciones ningún
 
 Usa las palabras del documento; no inventes cifras ni rellenes huecos. Si un dato no aparece, deja la cadena vacía. Si el documento no es una póliza ni un condicionado de seguro, pon es_poliza en false y deja lo demás vacío.
 
-Escribe en español de España, en las etiquetas y en los valores.`;
+Escribe en español de España, en las etiquetas y en los valores.
+
+Devuelve SIEMPRE el resultado llamando a la herramienta registrar_poliza, también cuando el documento no sea una póliza (en ese caso, con es_poliza en false). No respondas nunca en texto libre.`;
 
 /** Barrido final: si algo se coló pese a las instrucciones, no sale de aquí. */
 const PATRONES_PERSONALES = [
@@ -177,7 +179,14 @@ export async function POST(request: Request) {
             input_schema: ESQUEMA,
           },
         ],
-        tool_choice: { type: "tool", name: "registrar_poliza" },
+        // `auto`, no `{type:"tool"}`. Forzar una herramienta concreta parece lo
+        // correcto aquí —solo hay una y siempre queremos esa—, pero los modelos
+        // con razonamiento extendido rechazan la petición entera:
+        // «tool_choice: type "tool" and "any" are not supported for this model».
+        // Con `auto` y la instrucción del sistema, la llaman igual; y si algún
+        // día no lo hicieran, más abajo se devuelve un 422 entendible en vez de
+        // un error del servidor.
+        tool_choice: { type: "auto" },
         messages: [
           {
             role: "user",
